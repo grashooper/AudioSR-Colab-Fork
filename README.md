@@ -4,7 +4,7 @@
 
 v0.3 changelog
 - added : multiband ensemble option to use original audio below the given cutoff frequency and the generated audio above.
-- fixed : issue with other than .wav error while saving the final audio
+- fixed : other than .wav input error while saving the final audio
 
 Colab adaptation of AudioSR, with some tweaks:
 - added a chunking feature to process input of any length
