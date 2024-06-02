@@ -2,11 +2,13 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
 
-v0.3 changelog
+Colab adaptation of AudioSR, with some tweaks:
+
+v0.3
 - added : multiband ensemble option to use original audio below the given cutoff frequency and the generated audio above.
 - fixed : other than .wav input error while saving the final audio
 
-Colab adaptation of AudioSR, with some tweaks:
+v0.2
 - added a chunking feature to process input of any length
 - added stereo handling, stereo input channels will be splitted and processed independantly (dual mono) and then reconstructed as stereo audio.
 - added overlap feature to smooth the transitions between chunks (don't use high values because AudioSR is not 100% phase accurate and this will create weird phase cancellations accross the overlapping regions)
