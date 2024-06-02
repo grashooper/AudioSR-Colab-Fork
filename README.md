@@ -14,7 +14,8 @@ v0.2
 - added overlap feature to smooth the transitions between chunks (don't use high values because AudioSR is not 100% phase accurate and this will create weird phase cancellations accross the overlapping regions)
 
 ---
-Adaptation & tweaks by [jarredou](https://https://github.com/jarredou/)
+
+
 
 Original work [AudioSR: Versatile Audio Super-resolution at Scale](https://github.com/haoheliu/versatile_audio_super_resolution) by Haohe Liu, Ke Chen, Qiao Tian, Wenwu Wang, Mark D. Plumbley
 ```
