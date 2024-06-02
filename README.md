@@ -1,11 +1,10 @@
 # AudioSR-Colab-Fork v0.3
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
+
 v0.3 changelog
 - added : multiband ensemble option to use original audio below the given cutoff frequency and the generated audio above.
 - fixed : issue with other than .wav error while saving the final audio
-
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
 
 Colab adaptation of AudioSR, with some tweaks:
 - added a chunking feature to process input of any length
