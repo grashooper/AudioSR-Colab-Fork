@@ -26,7 +26,7 @@ pip install cog huggingface_hub unidecode phonemizer einops torchlibrosa transfo
 pip install -r requirements.txt
 wget https://raw.githubusercontent.com/jarredou/AudioSR-Colab-Fork/main/inference.py
 ```
-CLI examaple
+CLI example
 ```
 python inference.py --input "{input_file_path}" \
                     --output "{output_folder}" \
