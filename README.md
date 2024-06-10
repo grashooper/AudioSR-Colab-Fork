@@ -1,8 +1,11 @@
-# AudioSR-Colab-Fork v0.3
+# AudioSR-Colab-Fork v0.4
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
 
 Colab adaptation of AudioSR, with some tweaks:
+
+v0.4
+- code rework, inference.py created for local CLI usage.
 
 v0.3
 - added : multiband ensemble option to use original audio below the given cutoff frequency and the generated audio above.
