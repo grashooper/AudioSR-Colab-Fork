@@ -17,8 +17,29 @@ v0.2
 - added overlap feature to smooth the transitions between chunks (don't use high values because AudioSR is not 100% phase accurate and this will create weird phase cancellations accross the overlapping regions)
 
 ---
+Local usage:
+Install AudioSR and requirements/edited inference file:
+```
+git clone https://github.com/haoheliu/versatile_audio_super_resolution.git
+cd versatile_audio_super_resolution
+pip install cog huggingface_hub unidecode phonemizer einops torchlibrosa transformers ftfy timm librosa
+pip install -r requirements.txt
+wget https://raw.githubusercontent.com/jarredou/AudioSR-Colab-Fork/main/inference.py
+```
+CLI examaple
+```
+python inference.py --input "{input_file_path}" \
+                    --output "{output_folder}" \
+                    --ddim_steps 50 \
+                    --guidance_scale 3.5 \
+                    --seed 0 \
+                    --chunk_size 10.24 \
+                    --overlap 0.04 \
+                    --multiband_ensemble True \
+                    --input_cutoff 14000
+```
 
-
+---
 
 Original work [AudioSR: Versatile Audio Super-resolution at Scale](https://github.com/haoheliu/versatile_audio_super_resolution) by Haohe Liu, Ke Chen, Qiao Tian, Wenwu Wang, Mark D. Plumbley
 ```
