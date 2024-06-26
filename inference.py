@@ -59,7 +59,7 @@ class Predictor(BasePredictor):
         sr = input_cutoff*2
         #sf.write("resampled.wav", audio, sr)
         
-        print(f"samplerate = {sr}")
+        print(f"input cutoff = {input_cutoff}")
         
         # check if audio is stereo & split channels
         is_stereo = len(audio.shape) == 2
