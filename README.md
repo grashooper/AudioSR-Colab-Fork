@@ -4,6 +4,10 @@
 
 Colab adaptation of AudioSR, with some tweaks:
 
+v0.5
+- input audio is resampled accordingly to 'input_cutoff' (instead of lowpass filtering)
+- each processed chunk is normalised at same LUFS level than input chunk (fix the volume drop issue)
+
 v0.4
 - code rework, inference.py created for local CLI usage.
 
