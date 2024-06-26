@@ -11,6 +11,7 @@ import argparse
 import librosa
 from audiosr import build_model, super_resolution
 from scipy import signal
+import pyloudnorm as pyln
 
 
 import warnings
@@ -52,17 +53,14 @@ class Predictor(BasePredictor):
 
     def process_audio(self, input_file, chunk_size=5.12, overlap=0.1, seed=None, guidance_scale=3.5, ddim_steps=50):
 
-        # check if input_file is a file path or a numpy array
-        if isinstance(input_file, str):
-            audio, sr = sf.read(input_file)
-        else:
-            audio = input_file
-
-        if multiband_ensemble is True:
-            # add cutoff to input
-            audio = lr_filter(audio, input_cutoff, 'lowpass', sr=44100)
+        audio, sr = librosa.load(input_file, sr=input_cutoff*2, mono=False)
+        audio = audio.T
+        #print(sr)
+        sr = input_cutoff*2
+        #sf.write("resampled.wav", audio, sr)
         
-        print(f"original samplerate = {sr}")
+        print(f"samplerate = {sr}")
+        
         # check if audio is stereo & split channels
         is_stereo = len(audio.shape) == 2
         if is_stereo:
@@ -75,10 +73,12 @@ class Predictor(BasePredictor):
 
         # define chunk and overlap size in samples based on input sample rate
         chunk_samples = int(chunk_size * sr)
+        #print(chunk_samples)
         overlap_samples = int(overlap * chunk_samples)
 
         # calculate chunk size and overlap based on output sample rate
         output_chunk_samples = int(chunk_size * self.sr)
+        #print(output_chunk_samples)
         output_overlap_samples = int(overlap * output_chunk_samples)
         enable_overlap = True if overlap > 0 else False
 
@@ -111,7 +111,13 @@ class Predictor(BasePredictor):
         reconstructed_ch1 = np.zeros((1, total_length))
         # print(reconstructed_ch1.shape)
 
+        meter_before = pyln.Meter(sr) # create BS.1770 meter
+        meter_after = pyln.Meter(self.sr) # create BS.1770 meter
+        
+
         for i, chunk in enumerate(chunks_ch1):
+            loudness_before = meter_before.integrated_loudness(chunk)
+            #print(chunk.shape)
             print(f"Processing chunk {i+1} of {len(chunks_ch1)} for Left/Mono channel")
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav:
                 sf.write(temp_wav.name, chunk, sr)
@@ -127,11 +133,19 @@ class Predictor(BasePredictor):
                 )
                 # remove all junk added by audiosr
                 # print(f"out_chunk.shape = {out_chunk.shape}")
+                #print(f"1 {out_chunk.shape}")
                 out_chunk = out_chunk[0]
+                #print(f"2 {out_chunk.shape}")
                 # print(f"reshaped out_chunk.shape = {out_chunk.shape}")
                 num_samples_to_keep = int(original_lengths_ch1[i] * sample_rate_ratio)
                 # print(f"num_samples_to_keep : {num_samples_to_keep}")
-                out_chunk = out_chunk[:, :num_samples_to_keep]
+                out_chunk = out_chunk[:, :num_samples_to_keep].squeeze()
+                #print(f"3 {out_chunk.shape}")
+
+                loudness_after = meter_after.integrated_loudness(out_chunk)
+                out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
+                #loudness_after = meter_after.integrated_loudness(out_chunk)
+                #print(f"loudness_before = {loudness_before} | loudness_after = {loudness_after}")
 
 
                 # apply crossfade if overlap is enabled
@@ -144,19 +158,19 @@ class Predictor(BasePredictor):
                     fade_in = np.linspace(0., 1., actual_overlap_samples)
 
                     if i == 0:
-                        out_chunk[:, -actual_overlap_samples:] *= fade_out
+                        out_chunk[-actual_overlap_samples:] *= fade_out
 
                     elif i < len(chunks_ch1) - 1:
-                        out_chunk[:, :actual_overlap_samples] *= fade_in
-                        out_chunk[:, -actual_overlap_samples:] *= fade_out
+                        out_chunk[:actual_overlap_samples] *= fade_in
+                        out_chunk[-actual_overlap_samples:] *= fade_out
 
                     else:
-                        out_chunk[:, :actual_overlap_samples] *= fade_in
+                        out_chunk[:actual_overlap_samples] *= fade_in
 
                 # print(f"out_chunk.shape : {out_chunk.shape}")
 
                 start = i * (output_chunk_samples - output_overlap_samples if enable_overlap else output_chunk_samples)
-                end = start + out_chunk.shape[1]
+                end = start + out_chunk.shape[0]
                 reconstructed_ch1[0, start:end] += out_chunk.flatten()
 
 
@@ -166,6 +180,7 @@ class Predictor(BasePredictor):
 
             for i, chunk in enumerate(chunks_ch2):
                 print(f"Processing chunk {i+1} of {len(chunks_ch2)} for Right channel")
+                loudness_before = meter_before.integrated_loudness(chunk)
                 with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_wav:
                     sf.write(temp_wav.name, chunk, sr)
                     # print(f"chunk.shape = {chunk.shape}")
@@ -185,7 +200,13 @@ class Predictor(BasePredictor):
                     # print(f"reshaped out_chunk.shape = {out_chunk.shape}")
                     num_samples_to_keep = int(original_lengths_ch2[i] * sample_rate_ratio)
                     # print(f"num_samples_to_keep : {num_samples_to_keep}")
-                    out_chunk = out_chunk[:, :num_samples_to_keep]
+                    
+                    out_chunk = out_chunk[:, :num_samples_to_keep].squeeze()
+
+                    loudness_after = meter_after.integrated_loudness(out_chunk)
+                    out_chunk = pyln.normalize.loudness(out_chunk, loudness_after, loudness_before)
+                    #loudness_after = meter_after.integrated_loudness(out_chunk)
+                    #print(f"loudness_before = {loudness_before} | loudness_after = {loudness_after}")
 
                     # apply crossfade if overlap is enabled
                     if enable_overlap:
@@ -198,20 +219,20 @@ class Predictor(BasePredictor):
 
                         # no fadein for 1st chunk
                         if i == 0:
-                            out_chunk[:, -actual_overlap_samples:] *= fade_out
+                            out_chunk[-actual_overlap_samples:] *= fade_out
 
                         elif i < len(chunks_ch1) - 1:
-                            out_chunk[:, :actual_overlap_samples] *= fade_in
-                            out_chunk[:, -actual_overlap_samples:] *= fade_out
+                            out_chunk[:actual_overlap_samples] *= fade_in
+                            out_chunk[-actual_overlap_samples:] *= fade_out
 
                         # no fadeout for last  chunk
                         else:
-                            out_chunk[:, :actual_overlap_samples] *= fade_in
+                            out_chunk[:actual_overlap_samples] *= fade_in
 
                     # print(f"out_chunk.shape : {out_chunk.shape}")
 
                     start = i * (output_chunk_samples - output_overlap_samples if enable_overlap else output_chunk_samples)
-                    end = start + out_chunk.shape[1]
+                    end = start + out_chunk.shape[0]
                     reconstructed_ch2[0, start:end] += out_chunk.flatten()
 
                 reconstructed_audio = np.stack([reconstructed_ch1, reconstructed_ch2], axis=-1)
@@ -222,7 +243,8 @@ class Predictor(BasePredictor):
         #print(reconstructed_audio.shape)
         if multiband_ensemble is True:
             # get low from origin input resampled
-            low = librosa.resample(audio.T ,orig_sr=sr,target_sr=48000, res_type='soxr_hq')
+            #low = librosa.resample(audio.T ,orig_sr=sr,target_sr=48000, res_type='soxr_hq')
+            low, _ = librosa.load(input_file, sr=48000, mono=False)
             # print(f"low.shape={low.shape}")
 
             # fix length issues
@@ -232,16 +254,17 @@ class Predictor(BasePredictor):
             # print(f"low.shape={low.shape}")
 
             # linkwitz riley crossover
-            low = lr_filter(low.T, crossover_freq, 'lowpass', order=6)
-            high = lr_filter(output.T, crossover_freq, 'highpass', order=6)
+            low = lr_filter(low.T, crossover_freq, 'lowpass', order=10)
+            high = lr_filter(output.T, crossover_freq, 'highpass', order=10)
             
             # add smoothing filter to high frequencies (more realistic)
-            high = lr_filter(high, 21000, 'lowpass', order=2)
+            high = lr_filter(high, 23000, 'lowpass', order=2)
 
             # print(f"high.shape={high.shape}")
 
             #sf.write(f"{output_folder}/low_upsampled.wav", low, 48000, subtype='PCM_16')
             #sf.write(f"{output_folder}/high_upsampled.wav", high, 48000, subtype='PCM_16')
+            #sf.write(f"{output_folder}/high_full.wav", output.T, 48000, subtype='PCM_16')
             #sf.write(f"{output_folder}/input.wav", audio, 44100, subtype='PCM_16')
 
             # multiband ensemble
@@ -257,7 +280,7 @@ class Predictor(BasePredictor):
         ddim_steps: int = Input(description="Number of inference steps", default=50, ge=10, le=500),
         guidance_scale: float = Input(description="Scale for classifier free guidance", default=3.5, ge=1.0, le=20.0),
         overlap: float = Input(description="overlap size", default=0.04),
-        chunk_size: float = Input(description="chunksize", default=5.12),
+        chunk_size: float = Input(description="chunksize", default=10.24),
         seed: int = Input(description="Random seed. Leave blank to randomize the seed", default=None)
     ) -> Path:
 
@@ -333,7 +356,7 @@ if __name__ == "__main__":
     input_cutoff = args.input_cutoff
     multiband_ensemble = args.multiband_ensemble
 
-    crossover_freq = input_cutoff - 500
+    crossover_freq = input_cutoff - 1000
 
     p = Predictor()
     p.setup()
