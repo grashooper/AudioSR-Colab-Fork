@@ -22,14 +22,20 @@ torch.set_float32_matmul_precision("high")
 
 
 
-
 def match_array_shapes(array_1:np.ndarray, array_2:np.ndarray):
-    if array_1.shape[1] > array_2.shape[1]:
-        array_1 = array_1[:,:array_2.shape[1]]
-    elif array_1.shape[1] < array_2.shape[1]:
-        padding = array_2.shape[1] - array_1.shape[1]
-        array_1 = np.pad(array_1, ((0,0), (0,padding)), 'constant', constant_values=0)
+    if (len(array_1.shape) == 1) & (len(array_2.shape) == 1):
+        if array_1.shape[0] > array_2.shape[0]:
+            array_1 = array_1[:array_2.shape[0]]
+        elif array_1.shape[0] < array_2.shape[0]:
+            array_1 = np.pad(array_1, ((array_2.shape[0] - array_1.shape[0], 0)), 'constant', constant_values=0)
+    else:
+        if array_1.shape[1] > array_2.shape[1]:
+            array_1 = array_1[:,:array_2.shape[1]]
+        elif array_1.shape[1] < array_2.shape[1]:
+            padding = array_2.shape[1] - array_1.shape[1]
+            array_1 = np.pad(array_1, ((0,0), (0,padding)), 'constant', constant_values=0)
     return array_1
+
 
 def lr_filter(audio, cutoff, filter_type, order=12, sr=48000):
     audio = audio.T
