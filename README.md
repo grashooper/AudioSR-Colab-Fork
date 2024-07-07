@@ -1,4 +1,4 @@
-# AudioSR-Colab-Fork v0.4
+# AudioSR-Colab-Fork v0.5
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
 
