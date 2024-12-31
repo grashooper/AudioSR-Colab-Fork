@@ -1,3 +1,4 @@
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q811R5YI)  
 # AudioSR-Colab-Fork v0.5
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jarredou/AudioSR-Colab-Fork/blob/main/AudioSR_Colab_Fork.ipynb)
